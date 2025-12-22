@@ -9,4 +9,5 @@ mod data;
 pub enum ReceivedItem {
     Event(Box<events::ReturnedEvent>),
     Command(Box<commands::ReturnedCommand>),
+    SocketClosed,
 }

@@ -82,7 +82,10 @@ impl DiscordIpcClient {
         let mut socket_clone = self.socket.clone();
         self.event_task = Some(tokio::spawn(async move {
             loop {
-                let (_opcode, payload) = socket_clone.recv().await.unwrap();
+                let Ok((_opcode, payload)) = socket_clone.recv().await else {
+                    func(ReceivedItem::SocketClosed);
+                    break;
+                };
                 match serde_json::from_str::<ReceivedItem>(&payload) {
                     Ok(item) => func(item),
                     Err(error) => eprintln!("Failed to deserialize payload {}: {}", payload, error),

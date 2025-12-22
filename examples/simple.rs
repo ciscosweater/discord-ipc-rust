@@ -128,6 +128,10 @@ fn handle_message(item: ReceivedItem) {
             ReturnedCommand::SetVoiceSettings(_) => println!("Voice settings update succeeded"),
             _ => println!("Received other command response: {:?}", command),
         },
+        ReceivedItem::SocketClosed => {
+            eprintln!("Discord IPC socket closed");
+            std::process::exit(0);
+        }
     }
 }
 
