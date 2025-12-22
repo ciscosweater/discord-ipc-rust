@@ -6,6 +6,7 @@ use crate::utils::create_packet_json;
 use crate::{DiscordRPCError, Result};
 
 use serde_json::json;
+use tokio::task::JoinHandle;
 
 #[allow(dead_code)]
 enum OpCodes {
@@ -19,13 +20,18 @@ enum OpCodes {
 pub struct DiscordIpcClient {
     pub client_id: String,
     socket: DiscordIpcSocket,
+    event_task: Option<JoinHandle<()>>,
 }
 
 impl DiscordIpcClient {
     /// Returns a newly constructed client and the active Discord user
     pub async fn create(client_id: String) -> Result<(DiscordIpcClient, User)> {
         let socket = DiscordIpcSocket::new().await?;
-        let mut client = Self { client_id, socket };
+        let mut client = Self {
+            client_id,
+            socket,
+            event_task: None,
+        };
 
         client
             .socket
@@ -69,8 +75,12 @@ impl DiscordIpcClient {
     where
         F: Fn(ReceivedItem) + Send + Sync + 'static,
     {
+        if let Some(handle) = self.event_task.take() {
+            handle.abort();
+        }
+
         let mut socket_clone = self.socket.clone();
-        tokio::spawn(async move {
+        self.event_task = Some(tokio::spawn(async move {
             loop {
                 let (_opcode, payload) = socket_clone.recv().await.unwrap();
                 match serde_json::from_str::<ReceivedItem>(&payload) {
@@ -78,6 +88,19 @@ impl DiscordIpcClient {
                     Err(error) => eprintln!("Failed to deserialize payload {}: {}", payload, error),
                 }
             }
-        });
+        }));
+    }
+
+    /// Remove the event handler
+    pub fn remove_event_handler(&mut self) {
+        if let Some(handle) = self.event_task.take() {
+            handle.abort();
+        }
+    }
+}
+
+impl Drop for DiscordIpcClient {
+    fn drop(&mut self) {
+        self.remove_event_handler();
     }
 }
