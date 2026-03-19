@@ -67,7 +67,11 @@ fn get_os_pipe_paths() -> HashSet<String> {
     possible_paths.insert("/tmp/discord-ipc-".to_owned());
 
     if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
-        possible_paths.insert(runtime_dir.clone() + "/app/com.discordapp.Discord/discord-ipc-"); // Discord installed via Flatpak
+        // Discord installed via Flatpak (sandboxed path)
+        possible_paths.insert(runtime_dir.clone() + "/.flatpak/com.discordapp.Discord/xdg-run/discord-ipc-");
+        // Legacy Flatpak path
+        possible_paths.insert(runtime_dir.clone() + "/app/com.discordapp.Discord/discord-ipc-");
+        // Standard path
         possible_paths.insert(runtime_dir + "/discord-ipc-");
     }
 
