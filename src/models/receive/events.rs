@@ -1,6 +1,7 @@
 pub use super::data::*;
 
 use crate::models::shared::voice::VoiceSettings;
+use crate::models::soundboard::SoundboardSound;
 
 use serde::{Deserialize, Serialize};
 
@@ -28,4 +29,5 @@ pub enum ReturnedEvent {
     ActivityJoin(ActivityJoinData),
     ActivitySpectate(ActivitySpectateData),
     ActivityJoinRequest(ActivityJoinRequestData),
+    SoundboardSounds(Vec<SoundboardSound>),
 }

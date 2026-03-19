@@ -93,3 +93,10 @@ pub struct CloseActivityRequestArgs {
     /// snowflake - the id of the requesting user
     pub user_id: String,
 }
+
+/// <https://discord.com/developers/docs/topics/rpc#request_soundboard_sounds-request-soundboard-sounds-argument-structure>
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RequestSoundboardSoundsArgs {
+    /// string - id of the guild to request soundboard sounds for
+    pub guild_id: String,
+}

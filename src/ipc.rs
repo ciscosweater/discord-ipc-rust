@@ -67,6 +67,7 @@ impl DiscordIpcClient {
     pub async fn emit_command(&mut self, command: &SentCommand) -> Result<()> {
         let mut command_json = command.to_json()?;
         let json_string = create_packet_json(&mut command_json)?;
+        log::debug!("IPC sending: {}", json_string);
         self.emit_string(&json_string).await
     }
 

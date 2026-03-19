@@ -141,6 +141,7 @@ name = "discord-ipc-rust"
 version = "0.1.4"
 dependencies = [
  "dotenv",
+ "log",
  "reqwest",
  "serde",
  "serde_json",

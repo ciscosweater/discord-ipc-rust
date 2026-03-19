@@ -24,6 +24,7 @@ serde_repr = "0.1.20"
 uuid = { version = "1.18", features = ["v4"] }
 tokio = { version = "1.48", features = ["full"] }
 thiserror = "1.0"
+log = "0.4"
 
 [dev-dependencies]
 dotenv = "0.15"
