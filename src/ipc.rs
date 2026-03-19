@@ -1,29 +1,57 @@
 use crate::ipc_socket::DiscordIpcSocket;
 use crate::models::receive::commands::{GetGuildData, GetGuildsData, ReturnedCommand};
-use crate::models::receive::{ReceivedItem, events::ReturnedEvent};
+use crate::models::receive::{CommandResponse, ReceivedItem, events::ReturnedEvent};
 use crate::models::send::commands::{AuthenticateArgs, SentCommand};
 use crate::models::shared::User;
-use crate::utils::create_packet_json;
+use crate::utils::create_packet_json_with_nonce;
 use crate::{DiscordRPCError, Result};
 
 use serde_json::json;
 use tokio::task::JoinHandle;
 
-fn parse_fallback_item(payload: &str) -> Option<ReceivedItem> {
-    let value: serde_json::Value = serde_json::from_str(payload).ok()?;
+fn parse_fallback_command(value: &serde_json::Value) -> Option<ReturnedCommand> {
     let cmd = value.get("cmd")?.as_str()?;
 
     match cmd {
         "GET_GUILDS" => {
             let guilds = serde_json::from_value::<GetGuildsData>(value.get("data")?.clone()).ok()?;
-            Some(ReceivedItem::Command(Box::new(ReturnedCommand::GetGuilds(guilds))))
+            Some(ReturnedCommand::GetGuilds(guilds))
         }
         "GET_GUILD" => {
             let guild = serde_json::from_value::<GetGuildData>(value.get("data")?.clone()).ok()?;
-            Some(ReceivedItem::Command(Box::new(ReturnedCommand::GetGuild(guild))))
+            Some(ReturnedCommand::GetGuild(guild))
         }
         _ => None,
     }
+}
+
+fn parse_received_item(payload: &str) -> Result<ReceivedItem> {
+    let value: serde_json::Value = serde_json::from_str(payload)?;
+    let event_name = value.get("evt").and_then(|evt| evt.as_str());
+    let command_name = value.get("cmd").and_then(|cmd| cmd.as_str());
+
+    if event_name.is_some() && command_name == Some("DISPATCH") {
+        return Ok(ReceivedItem::Event(Box::new(serde_json::from_value(value)?)));
+    }
+
+    if command_name.is_some() {
+        let nonce = value
+            .get("nonce")
+            .and_then(|nonce| nonce.as_str())
+            .map(|nonce| nonce.to_string());
+        let command = serde_json::from_value::<ReturnedCommand>(value.clone())
+            .or_else(|_| parse_fallback_command(&value).ok_or(DiscordRPCError::CouldNotConnect))?;
+        return Ok(ReceivedItem::Command(Box::new(CommandResponse {
+            nonce,
+            command,
+        })));
+    }
+
+    if event_name.is_some() {
+        return Ok(ReceivedItem::Event(Box::new(serde_json::from_value(value)?)));
+    }
+
+    Err(DiscordRPCError::CouldNotConnect)
 }
 
 #[allow(dead_code)]
@@ -83,10 +111,16 @@ impl DiscordIpcClient {
 
     /// Send a command to the RPC server
     pub async fn emit_command(&mut self, command: &SentCommand) -> Result<()> {
+        self.emit_command_with_nonce(command).await.map(|_| ())
+    }
+
+    /// Send a command to the RPC server and return the nonce used for correlation.
+    pub async fn emit_command_with_nonce(&mut self, command: &SentCommand) -> Result<String> {
         let mut command_json = command.to_json()?;
-        let json_string = create_packet_json(&mut command_json)?;
+        let (json_string, nonce) = create_packet_json_with_nonce(&mut command_json, None)?;
         log::debug!("IPC sending: {}", json_string);
-        self.emit_string(&json_string).await
+        self.emit_string(&json_string).await?;
+        Ok(nonce)
     }
 
     /// Set up an event handler that will be called whenever a value is received from the RPC server
@@ -105,14 +139,10 @@ impl DiscordIpcClient {
                     func(ReceivedItem::SocketClosed);
                     break;
                 };
-                match serde_json::from_str::<ReceivedItem>(&payload) {
+                match parse_received_item(&payload) {
                     Ok(item) => func(item),
                     Err(error) => {
-                        if let Some(item) = parse_fallback_item(&payload) {
-                            func(item);
-                        } else {
-                            eprintln!("Failed to deserialize payload {}: {}", payload, error);
-                        }
+                        eprintln!("Failed to deserialize payload {}: {}", payload, error);
                     }
                 }
             }

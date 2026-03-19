@@ -7,13 +7,16 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use uuid::Uuid;
 
-pub fn create_packet_json(value: &mut serde_json::Value) -> Result<String> {
-    let uuid = Uuid::new_v4().to_string();
+pub fn create_packet_json_with_nonce(
+    value: &mut serde_json::Value,
+    nonce: Option<String>,
+) -> Result<(String, String)> {
+    let nonce = nonce.unwrap_or_else(|| Uuid::new_v4().to_string());
 
     let payload = value.as_object_mut().expect("payload must be an object");
-    payload.insert("nonce".to_string(), Value::String(uuid));
+    payload.insert("nonce".to_string(), Value::String(nonce.clone()));
 
-    Ok(serde_json::to_string(&payload)?)
+    Ok((serde_json::to_string(&payload)?, nonce))
 }
 
 pub fn pack(opcode: u32, data_len: u32) -> Result<Vec<u8>> {
