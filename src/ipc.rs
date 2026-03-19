@@ -16,15 +16,10 @@ fn parse_fallback_item(payload: &str) -> Option<ReceivedItem> {
     match cmd {
         "GET_GUILDS" => {
             let guilds = serde_json::from_value::<GetGuildsData>(value.get("data")?.clone()).ok()?;
-            log::debug!(
-                "IPC fallback parsed GET_GUILDS with {} guilds",
-                guilds.guilds.len()
-            );
             Some(ReceivedItem::Command(Box::new(ReturnedCommand::GetGuilds(guilds))))
         }
         "GET_GUILD" => {
             let guild = serde_json::from_value::<GetGuildData>(value.get("data")?.clone()).ok()?;
-            log::debug!("IPC fallback parsed GET_GUILD for {}", guild.id);
             Some(ReceivedItem::Command(Box::new(ReturnedCommand::GetGuild(guild))))
         }
         _ => None,
@@ -110,7 +105,6 @@ impl DiscordIpcClient {
                     func(ReceivedItem::SocketClosed);
                     break;
                 };
-                log::debug!("IPC received: {}", payload);
                 match serde_json::from_str::<ReceivedItem>(&payload) {
                     Ok(item) => func(item),
                     Err(error) => {
