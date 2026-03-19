@@ -52,7 +52,7 @@ pub struct Message {
     /// snowflake - id of the message
     pub id: String,
     /// snowflake - id of the channel the message was sent in
-    pub channel_id: String,
+    pub channel_id: Option<String>,
     /// user object - the author of this message (not guaranteed to be a valid user, see below)
     pub author: User,
     /// string - contents of the message
