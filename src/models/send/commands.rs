@@ -30,7 +30,7 @@ pub enum SentCommand {
     SetActivity,         // TODO
     SendActivityJoinInvite(SendActivityJoinInviteArgs),
     CloseActivityRequest(CloseActivityRequestArgs),
-    RequestSoundboardSounds(RequestSoundboardSoundsArgs),
+    GetSoundboardSounds(GetSoundboardSoundsArgs),
 }
 
 impl SentCommand {

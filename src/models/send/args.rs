@@ -94,9 +94,9 @@ pub struct CloseActivityRequestArgs {
     pub user_id: String,
 }
 
-/// <https://discord.com/developers/docs/topics/rpc#request_soundboard_sounds-request-soundboard-sounds-argument-structure>
+/// <https://discord.com/developers/docs/topics/rpc#get_soundboard_sounds-get-soundboard-sounds-argument-structure>
 #[derive(Serialize, Deserialize, Debug)]
-pub struct RequestSoundboardSoundsArgs {
-    /// string - id of the guild to request soundboard sounds for
+pub struct GetSoundboardSoundsArgs {
+    /// string - id of the guild to get soundboard sounds for
     pub guild_id: String,
 }

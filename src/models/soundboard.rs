@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-/// <https://discord.com/developers/docs/topics/rpc#request_soundboard_sounds-request-soundboard-sounds-argument-structure>
-#[derive(Serialize, Deserialize, Debug)]
-pub struct RequestSoundboardSoundsArgs {
-    /// string - id of the guild to request soundboard sounds for
+/// <https://discord.com/developers/docs/topics/rpc#get_soundboard_sounds-get-soundboard-sounds-argument-structure>
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GetSoundboardSoundsArgs {
+    /// string - id of the guild to get soundboard sounds for
     pub guild_id: String,
 }
 
 /// <https://discord.com/developers/docs/topics/rpc#soundboard-sounds-soundboard-sounds-event-structure>
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SoundboardSound {
     /// snowflake - id of the sound
     pub sound_id: String,
@@ -29,7 +29,7 @@ pub struct SoundboardSound {
 }
 
 /// Partial user object for soundboard sound creator
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SoundboardSoundUser {
     /// snowflake - id of the user
     pub id: String,

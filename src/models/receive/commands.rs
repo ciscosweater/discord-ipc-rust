@@ -1,7 +1,8 @@
 use crate::models::shared::{
-    Channel, Guild, User,
+    Channel, User,
     voice::{UserVoiceSettings, VoiceSettings},
 };
+use crate::models::soundboard::SoundboardSound;
 
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +13,7 @@ pub enum ReturnedCommand {
     Authorize { code: String },
     Authenticate(AuthenticateData),
     GetGuild(GetGuildData),
-    GetGuilds(Vec<Guild>),
+    GetGuilds(GetGuildsData),
     GetChannel(Channel),
     GetChannels(Vec<Channel>),
     Subscribe { evt: String },
@@ -22,6 +23,7 @@ pub enum ReturnedCommand {
     GetSelectedVoiceChannel(Option<Channel>),
     SelectTextChannel(Option<Channel>),
     GetVoiceSettings(VoiceSettings),
+    GetSoundboardSounds(Vec<SoundboardSound>),
     SetVoiceSettings(VoiceSettings),
     SetCertifiedDevices, // Restricted to hardware manufacturers
     SetActivity,         // TODO
@@ -65,5 +67,10 @@ pub struct GetGuildData {
     /// string - guild name
     pub name: String,
     /// string - guild icon url
-    pub icon_url: String,
+    pub icon_url: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetGuildsData {
+    pub guilds: Vec<GetGuildData>,
 }

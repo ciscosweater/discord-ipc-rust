@@ -1,4 +1,5 @@
 use crate::ipc_socket::DiscordIpcSocket;
+use crate::models::receive::commands::{GetGuildData, GetGuildsData, ReturnedCommand};
 use crate::models::receive::{ReceivedItem, events::ReturnedEvent};
 use crate::models::send::commands::{AuthenticateArgs, SentCommand};
 use crate::models::shared::User;
@@ -7,6 +8,28 @@ use crate::{DiscordRPCError, Result};
 
 use serde_json::json;
 use tokio::task::JoinHandle;
+
+fn parse_fallback_item(payload: &str) -> Option<ReceivedItem> {
+    let value: serde_json::Value = serde_json::from_str(payload).ok()?;
+    let cmd = value.get("cmd")?.as_str()?;
+
+    match cmd {
+        "GET_GUILDS" => {
+            let guilds = serde_json::from_value::<GetGuildsData>(value.get("data")?.clone()).ok()?;
+            log::debug!(
+                "IPC fallback parsed GET_GUILDS with {} guilds",
+                guilds.guilds.len()
+            );
+            Some(ReceivedItem::Command(Box::new(ReturnedCommand::GetGuilds(guilds))))
+        }
+        "GET_GUILD" => {
+            let guild = serde_json::from_value::<GetGuildData>(value.get("data")?.clone()).ok()?;
+            log::debug!("IPC fallback parsed GET_GUILD for {}", guild.id);
+            Some(ReceivedItem::Command(Box::new(ReturnedCommand::GetGuild(guild))))
+        }
+        _ => None,
+    }
+}
 
 #[allow(dead_code)]
 enum OpCodes {
@@ -87,9 +110,16 @@ impl DiscordIpcClient {
                     func(ReceivedItem::SocketClosed);
                     break;
                 };
+                log::debug!("IPC received: {}", payload);
                 match serde_json::from_str::<ReceivedItem>(&payload) {
                     Ok(item) => func(item),
-                    Err(error) => eprintln!("Failed to deserialize payload {}: {}", payload, error),
+                    Err(error) => {
+                        if let Some(item) = parse_fallback_item(&payload) {
+                            func(item);
+                        } else {
+                            eprintln!("Failed to deserialize payload {}: {}", payload, error);
+                        }
+                    }
                 }
             }
         }));
