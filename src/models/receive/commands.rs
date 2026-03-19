@@ -24,6 +24,7 @@ pub enum ReturnedCommand {
     SelectTextChannel(Option<Channel>),
     GetVoiceSettings(VoiceSettings),
     GetSoundboardSounds(Vec<SoundboardSound>),
+    PlaySoundboardSound,
     SetVoiceSettings(VoiceSettings),
     SetCertifiedDevices, // Restricted to hardware manufacturers
     SetActivity,         // TODO
