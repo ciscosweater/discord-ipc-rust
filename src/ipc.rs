@@ -1,5 +1,7 @@
 use crate::ipc_socket::DiscordIpcSocket;
-use crate::models::receive::commands::{GetGuildData, GetGuildsData, ReturnedCommand};
+use crate::models::receive::commands::{
+    GetChannelsData, GetGuildData, GetGuildsData, ReturnedCommand,
+};
 use crate::models::receive::{CommandResponse, ReceivedItem, events::ReturnedEvent};
 use crate::models::send::commands::{AuthenticateArgs, SentCommand};
 use crate::models::shared::User;
@@ -20,6 +22,11 @@ fn parse_fallback_command(value: &serde_json::Value) -> Option<ReturnedCommand> 
         "GET_GUILD" => {
             let guild = serde_json::from_value::<GetGuildData>(value.get("data")?.clone()).ok()?;
             Some(ReturnedCommand::GetGuild(guild))
+        }
+        "GET_CHANNELS" => {
+            let channels =
+                serde_json::from_value::<GetChannelsData>(value.get("data")?.clone()).ok()?;
+            Some(ReturnedCommand::GetChannels(channels.channels))
         }
         _ => None,
     }

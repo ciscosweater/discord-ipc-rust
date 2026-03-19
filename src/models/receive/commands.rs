@@ -75,3 +75,8 @@ pub struct GetGuildData {
 pub struct GetGuildsData {
     pub guilds: Vec<GetGuildData>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetChannelsData {
+    pub channels: Vec<Channel>,
+}
