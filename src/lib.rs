@@ -12,6 +12,8 @@ pub enum DiscordRPCError {
     PipeNotFound,
     #[error("Could not connect to Discord")]
     CouldNotConnect,
+    #[error("{0}")]
+    Message(String),
     #[error("Failed to convert from slice")]
     TryFromSlice(#[from] std::array::TryFromSliceError),
     #[error("An I/O error occurred")]

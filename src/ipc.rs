@@ -37,6 +37,10 @@ fn parse_received_item(payload: &str) -> Result<ReceivedItem> {
     let event_name = value.get("evt").and_then(|evt| evt.as_str());
     let command_name = value.get("cmd").and_then(|cmd| cmd.as_str());
 
+    if event_name == Some("ERROR") {
+        return Ok(ReceivedItem::Event(Box::new(serde_json::from_value(value)?)));
+    }
+
     if event_name.is_some() && command_name == Some("DISPATCH") {
         return Ok(ReceivedItem::Event(Box::new(serde_json::from_value(value)?)));
     }
@@ -107,8 +111,21 @@ impl DiscordIpcClient {
     pub async fn authenticate(&mut self, access_token: String) -> Result<()> {
         let command = SentCommand::Authenticate(AuthenticateArgs { access_token });
         self.emit_command(&command).await?;
-        self.socket.recv().await?;
-        Ok(())
+        let (_opcode, payload) = self.socket.recv().await?;
+        match parse_received_item(&payload)? {
+            ReceivedItem::Command(command) => match command.command {
+                ReturnedCommand::Authenticate(_) => Ok(()),
+                _ => Err(DiscordRPCError::CouldNotConnect),
+            },
+            ReceivedItem::Event(event) => match *event {
+                ReturnedEvent::Error(error) => Err(DiscordRPCError::Message(format!(
+                    "{} ({})",
+                    error.message, error.code
+                ))),
+                _ => Err(DiscordRPCError::CouldNotConnect),
+            },
+            ReceivedItem::SocketClosed => Err(DiscordRPCError::CouldNotConnect),
+        }
     }
 
     /// Send an arbitrary JSON string payload to the RPC server
